@@ -31,6 +31,23 @@ import rticonnextdds_connector as rti
 lock = threading.RLock()
 finish_thread = False
 
+def user_subscriber_task(user_input):
+    global finish_thread
+
+    while finish_thread == False:
+        try:
+            user_input.wait(500)
+        except rti.TimeoutError as error:
+            continue
+        
+        with lock:
+            user_input.read()
+            for sample in user_input.samples:
+                if(sample.info['sample_state'] == "NOT_READ") and (sample.valid_data == False) and (sample.info['instance_state'] == "NOT_ALIVE_NO_WRITERS"):
+                    data = sample.get_dictionary()
+                    print("#Dropped user: " + data['username'])
+
+
 def message_subscriber_task(message_input):
     global finish_thread
 
@@ -109,8 +126,12 @@ with rti.open_connector(
     t2 = threading.Thread(target=message_subscriber_task, args=(message_input,))
     t2.start()
 
+    t3 = threading.Thread(target=user_subscriber_task, args=(user_input,))
+    t3.start()
+
     t1.join()
     t2.join()
+    t3.join()
 
     #sleep(5)
 

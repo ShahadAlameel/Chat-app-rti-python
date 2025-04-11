@@ -88,6 +88,13 @@
             <datawriter_qos base_name="Chat_Library::ChatMessage_Profile">
             </datawriter_qos>
           </data_writer>
+          <publisher_qos base_name="Chat_Library::ChatMessage_Profile">
+            <partition>
+              <name>
+                <element>$(group)</element>
+              </name>
+            </partition>
+          </publisher_qos>
         </publisher>
         <subscriber name="ChatUserSubscription">
           <data_reader name="ChatUserReader" topic_ref="userInfo">
@@ -107,6 +114,13 @@
             <datareader_qos base_name="Chat_Library::ChatMessage_Profile">
             </datareader_qos>
           </data_reader>
+          <subscriber_qos base_name="Chat_Library::ChatMessage_Profile">
+            <partition>
+              <name>
+                <element>$(group)</element>
+              </name>
+            </partition>
+          </subscriber_qos>
         </subscriber>
         <domain_participant_qos base_name="Chat_Library::Chat_Profile">
         </domain_participant_qos>
