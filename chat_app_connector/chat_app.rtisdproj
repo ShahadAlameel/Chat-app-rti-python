@@ -1,0 +1,34 @@
+{
+  "ui_projectName": "chat_app",
+  "ui_settings": {
+    "confirmDelete": true,
+    "showEZSecure": false,
+    "enableValuetypes": false,
+    "autosave": 1,
+    "enforceSnippetSeparation": true,
+    "useAsSnippetIfName": false,
+    "enableValidation": true
+  },
+  "ui_lastSaveTime": "28/3/2025 @ 1:38:08",
+  "ui_creationDate": "24/3/2025 @ 14:06:30",
+  "ui_creationSysDVersion": "7.3.0",
+  "ui_projectNotes": "",
+  "ui_include": [
+    {
+      "path": "BaselineRoot.documentationONLY.xml",
+      "readonly": true,
+      "builtin": true
+    },
+    {
+      "path": "BuiltinProfiles.documentationONLY.xml",
+      "readonly": true,
+      "builtin": true
+    },
+    {
+      "path": "chat_app.xml",
+      "readonly": false,
+      "builtin": false
+    }
+  ],
+  "ui_projectGUID": "2c94cec1-85d0-180c-bf6d-410c40a4d2fa"
+}
