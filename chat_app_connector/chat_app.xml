@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://community.rti.com/schema/7.3.0/rti_routing_service.xsd" version="7.3.0">
+<dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://community.rti.com/schema/7.5.0/rti_routing_service.xsd" version="7.5.0">
     <types>
       <const name="MAX_NAME_SIZE" type="int32" value="128"/>
       <const name="MAX_MSG_SIZE" type="int32" value="512"/>
@@ -97,6 +97,13 @@
         </subscriber>
         <subscriber name="ChatMessageSubscription">
           <data_reader name="ChatMessageReader" topic_ref="message">
+            <content_filter name="MessageFilter" kind="builtin.sql">
+              <expression>(toUser MATCH %0) or (toGroup MATCH %1)</expression>
+              <expression_parameters>
+                <element>&apos;$(user)&apos;</element>
+                <element>&apos;$(group)&apos;</element>
+              </expression_parameters>
+            </content_filter>
             <datareader_qos base_name="Chat_Library::ChatMessage_Profile">
             </datareader_qos>
           </data_reader>

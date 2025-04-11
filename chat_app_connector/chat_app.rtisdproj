@@ -8,9 +8,10 @@
     "autosave": 1,
     "enforceSnippetSeparation": true,
     "useAsSnippetIfName": false,
-    "enableValidation": true
+    "enableValidation": true,
+    "easyQosSelectedView": 10
   },
-  "ui_lastSaveTime": "28/3/2025 @ 1:38:08",
+  "ui_lastSaveTime": "11/4/2025 @ 20:48:20",
   "ui_creationDate": "24/3/2025 @ 14:06:30",
   "ui_creationSysDVersion": "7.3.0",
   "ui_projectNotes": "",
