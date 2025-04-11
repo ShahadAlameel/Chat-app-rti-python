@@ -23,18 +23,38 @@ parser.add_argument('-1', '--lastname', help='Last Name', type=str, default='')
 
 args = parser.parse_args()
 
+os.environ['user'] = str(args.user)
+os.environ['group'] = str(args.group)
+
 import rticonnextdds_connector as rti
 
 lock = threading.RLock()
+finish_thread = False
 
-def command_task(user_input):
-    finish_thread = False
+def message_subscriber_task(message_input):
+    global finish_thread
+
+    while finish_thread == False:
+        try:
+            message_input.wait(500)
+        except rti.TimeoutError as error:
+            continue
+
+        with lock:
+            message_input.take()
+            for sample in message_input.samples.valid_data_iter:
+                data = sample.get_dictionary()
+                print("#New chat message from user: "+ data['fromUser'] + ". Message: '" + data['message'] + "'")
+
+def command_task(user, message_output, user_input):
+    global finish_thread  
 
     while finish_thread == False:
         command = input("Please enter command \n")
 
         if command == "exit":
             finish_thread = True
+
         elif command == "list":
             with lock:
                 user_input.read()
@@ -44,6 +64,23 @@ def command_task(user_input):
                     if sample.info['instance_state'] == 'ALIVE':
                         data = sample.get_dictionary()
                         print("#username/group: " + data['username']+ "/" + data['group'])
+
+        elif command.startswith("send "):
+            destination = command.split(maxsplit=2)
+            if len(destination) == 3:
+                with lock:
+                    message_output.instance.set_string("fromUser", user)
+                    message_output.instance.set_string("toUser", destination[1])
+                    message_output.instance.set_string("toGroup", destination[1])
+                    message_output.instance.set_string("message", destination[2])
+
+                    message_output.write()
+
+            else:
+                print("Wrong usage. Use \"senf user|group message\"\n")
+
+        else:
+            print("Unknown command\n")
 
 with rti.open_connector(
     config_name="Chat_ParticipantLibrary::ChatParticipant",
@@ -66,10 +103,14 @@ with rti.open_connector(
         
     user_output.write()
 
-    t1 = threading.Thread(target=command_task, args=(user_input,))
+    t1 = threading.Thread(target=command_task, args=(args.user, message_output, user_input,))
     t1.start()
 
+    t2 = threading.Thread(target=message_subscriber_task, args=(message_input,))
+    t2.start()
+
     t1.join()
+    t2.join()
 
     #sleep(5)
 
