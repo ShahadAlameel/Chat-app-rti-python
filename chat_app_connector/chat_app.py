@@ -30,6 +30,41 @@ import rticonnextdds_connector as rti
 
 lock = threading.RLock()
 finish_thread = False
+offline_message_queue = {}
+
+# Queue the messages for offline users
+def queue_message_for_user(from_user, to_user, message):
+    global offline_message_queue
+
+    with lock:
+        # If the user is offline, queue the message
+        if to_user not in offline_message_queue:
+            offline_message_queue[to_user] = []
+        
+        offline_message_queue[to_user].append((from_user, message))
+    print(f"Message queued for {to_user} from:{from_user}. Message: '{message}'")
+
+# Deliver queued messages to the user when they come online
+def deliver_queued_messages(user):
+    global offline_message_queue, message_output
+
+    with lock:
+        if user in offline_message_queue:
+            messages = offline_message_queue[user]
+            for from_user, message in messages:
+                print(f"Delivering message to {user} from {from_user}: {message}")
+
+                # Send the queued message via DDS
+                message_output.instance.set_string("fromUser",from_user)  
+                message_output.instance.set_string("toUser", user)  
+                message_output.instance.set_string("toGroup", "")  # Empty group if not needed
+                message_output.instance.set_string("message", message)  
+
+                message_output.write() 
+                sleep(3)
+
+            # After delivering messages, clear the queue for the user
+            offline_message_queue[user] = []
 
 def user_subscriber_task(user_input):
     global finish_thread
@@ -46,6 +81,13 @@ def user_subscriber_task(user_input):
                 if(sample.info['sample_state'] == "NOT_READ") and (sample.valid_data == False) and (sample.info['instance_state'] == "NOT_ALIVE_NO_WRITERS"):
                     data = sample.get_dictionary()
                     print("#Dropped user: " + data['username'])
+                    offline_message_queue[data['username']] = []  # Initialize the queue for offline user
+                elif(sample.info['instance_state'] == "ALIVE"):
+                    # User is online, deliver any queued messages
+                    data = sample.get_dictionary()
+                    if data['username'] in offline_message_queue:
+                        print(f"#User {data['username']} is online. Delivering queued messages.")
+                        deliver_queued_messages(data['username'])
 
 
 def message_subscriber_task(message_input):
@@ -91,7 +133,13 @@ def command_task(user, message_output, user_input):
                     message_output.instance.set_string("toGroup", destination[1])
                     message_output.instance.set_string("message", destination[2])
 
-                    message_output.write()
+                    # Before sending, check if the user is offline
+                    if destination[1] in offline_message_queue:
+                        queue_message_for_user(user, destination[1], destination[2])  # Queue the message
+                    else:
+                        message_output.write()  # Send the message if the user is online
+
+                    #message_output.write()
 
             else:
                 print("Wrong usage. Use \"senf user|group message\"\n")
