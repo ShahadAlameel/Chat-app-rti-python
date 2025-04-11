@@ -1,5 +1,6 @@
 {
   "ui_projectName": "chat_app",
+  "ui_chatbot_last_session": 0,
   "ui_settings": {
     "confirmDelete": true,
     "showEZSecure": false,
