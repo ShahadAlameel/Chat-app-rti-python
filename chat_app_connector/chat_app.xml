@@ -14,6 +14,8 @@
         <member name="toUser" type="string" stringMaxLength="MAX_NAME_SIZE" key="true"/>
         <member name="toGroup" type="string" stringMaxLength="MAX_NAME_SIZE" key="true"/>
         <member name="message" type="string" stringMaxLength="MAX_MSG_SIZE"/>
+        <member name="fileData" type="string" stringMaxLength="MAX_MSG_SIZE"/>
+        <member name="fileName" type="string" stringMaxLength="MAX_MSG_SIZE"/>
       </struct>
     </types>
 
