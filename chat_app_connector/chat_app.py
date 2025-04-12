@@ -17,6 +17,7 @@ import base64
 file_path = os_path.dirname(os_path.realpath(__file__))
 parser = argparse.ArgumentParser(description='DDS Chat Application')
 
+# Set up command-line argument parsing
 parser.add_argument('user', help='User Name', type=str)
 parser.add_argument('group', help='Group Name', type=str)
 parser.add_argument('-f', '--firstname', help='First Name', type=str, default='')
@@ -24,11 +25,14 @@ parser.add_argument('-l', '--lastname', help='Last Name', type=str, default='')
 
 args = parser.parse_args()
 
+# Set environment variables for user and group
 os.environ['user'] = str(args.user)
 os.environ['group'] = str(args.group)
 
+# Import the RTI Connext DDS Connector library
 import rticonnextdds_connector as rti
 
+# Initialize global variables
 lock = threading.RLock()
 finish_thread = False
 offline_message_queue = {}
@@ -58,7 +62,7 @@ def deliver_queued_messages(user):
                 # Send the queued message via DDS
                 message_output.instance.set_string("fromUser", from_user)
                 message_output.instance.set_string("toUser", user)
-                message_output.instance.set_string("toGroup", "")  # Empty group if not needed
+                message_output.instance.set_string("toGroup", "")
                 message_output.instance.set_string("message", message)
                 if file_data and file_name:
                     message_output.instance.set_string("fileData", file_data)
@@ -73,6 +77,7 @@ def deliver_queued_messages(user):
             # After delivering messages, clear the queue for the user
             offline_message_queue[user] = []
 
+# Thread function for user subscriber task
 def user_subscriber_task(user_input):
     global finish_thread
 
@@ -96,7 +101,7 @@ def user_subscriber_task(user_input):
                         print(f"#User {data['username']} is online. Delivering queued messages.")
                         deliver_queued_messages(data['username'])
 
-
+# Thread function for message subscriber task
 def message_subscriber_task(message_input):
     global finish_thread
 
@@ -113,7 +118,6 @@ def message_subscriber_task(message_input):
                 print("#New chat message from user: " + data['fromUser'] + ". Message: '" + data['message'] + "'")
                 if data['fileName'] and data['fileData']:
                     print(f"#File received: {data['fileName']}")
-                    # You can save the file here or display it
                     try:
                         file_data = base64.b64decode(data['fileData'])
                         with open(data['fileName'], 'wb') as f:
@@ -122,6 +126,7 @@ def message_subscriber_task(message_input):
                     except Exception as e:
                         print(f"Error saving file: {e}")
 
+# Thread function to handle user commands
 def command_task(user, message_output, user_input):
     global finish_thread
 
@@ -134,9 +139,9 @@ def command_task(user, message_output, user_input):
         elif command == "list":
             with lock:
                 user_input.read()
-                # printing list of users/groups
+                # Printing list of users/groups
                 for sample in user_input.samples.valid_data_iter:
-                    # detecting alive instances
+                    # Detecting alive instances
                     if sample.info['instance_state'] == 'ALIVE':
                         data = sample.get_dictionary()
                         print("#username/group: " + data['username'] + "/" + data['group'])
@@ -195,6 +200,7 @@ def command_task(user, message_output, user_input):
         else:
             print("Unknown command\n")
 
+# Main application logic
 with rti.open_connector(
     config_name="Chat_ParticipantLibrary::ChatParticipant",
     url=file_path + "/chat_app.xml") as connector:
@@ -215,6 +221,7 @@ with rti.open_connector(
 
     user_output.write()
 
+    # Start threads for command handling and message/user subscription
     t1 = threading.Thread(target=command_task, args=(args.user, message_output, user_input,))
     t1.start()
 
@@ -224,12 +231,11 @@ with rti.open_connector(
     t3 = threading.Thread(target=user_subscriber_task, args=(user_input,))
     t3.start()
 
+    # Wait for threads to finish
     t1.join()
     t2.join()
     t3.join()
 
-    #sleep(5)
-
-    # unregister user
+    # Unregister user
     user_output.instance.set_string("username", args.user)
     user_output.write(action="unregister")
